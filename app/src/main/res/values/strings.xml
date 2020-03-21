@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MVVM Paging</string>
+    <string name="created_by">Created by %s</string>
+</resources>
