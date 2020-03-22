@@ -31,33 +31,23 @@ class DataSource : KoinComponent {
             onZeroLoad = this::loadFromZero
         )
 
-        val refreshTrigger: MutableLiveData<Unit> = MutableLiveData<Unit>()
-        val refreshStateLiveData: LiveData<State> = Transformations.switchMap(refreshTrigger) {
-            this@DataSource.getPostBySubName(loadPostRequest)
-        }
-
         val postLiveData: LiveData<PagedList<Post>> = LivePagedListBuilder(
             this.database
                 .redditPostDao()
                 .getRedditPostsBySub(loadPostRequest.subName),
-                PagedList.Config
-                    .Builder()
-                    .setEnablePlaceholders(false)
-                    .setInitialLoadSizeHint(PAGE_SIZE)
-                    .setPageSize(PAGE_SIZE)
-                    .setPrefetchDistance(15)
-                    .build()
+            PagedList.Config
+                .Builder()
+                .setEnablePlaceholders(false)
+                .setInitialLoadSizeHint(PAGE_SIZE)
+                .setPageSize(PAGE_SIZE)
+                .setPrefetchDistance(15)
+                .build()
         ).setBoundaryCallback(boundaryCallback).build()
 
         // Building Paging DataSource
         return PagingPosts(
             data = postLiveData,
-            loadMoreState = boundaryCallback.loadMoreState,
-            refresh = {
-                // Trigger the refresh live data
-                refreshTrigger.value = null
-            },
-            refreshState = refreshStateLiveData
+            networkState = boundaryCallback.networkState
         )
     }
 
@@ -79,43 +69,6 @@ class DataSource : KoinComponent {
         .map {
             it.data
         }
-
-    private fun getPostBySubName(loadPostRequest: LoadPostRequest): LiveData<State> {
-        // This LiveData emit states of get post by sub name process
-        val getPostBySubNameState: MutableLiveData<State> = MutableLiveData()
-        // launch coroutine blocking
-        CoroutineScope(loadPostRequest.coroutine).launch {
-            getPostBySubNameState.postValue(State.LOADING)
-            // TODO get more accurate error
-            val newPosts: List<Post>? =
-                loadFromZero(
-                    loadPostRequest.subName,
-                    PAGE_SIZE
-                )
-
-            if (newPosts == null) {
-                getPostBySubNameState.postValue(State.error("Refreshing reddit posts by subname ${loadPostRequest.subName} failed!"))
-                return@launch
-            }
-
-            if (newPosts.isEmpty()) {
-                getPostBySubNameState.postValue(State.EMPTY)
-                return@launch
-            }
-
-            // 1st, Delete all posts belong to the requested sub name
-            this@DataSource.deletePostBySubNameInLocalDatabase(loadPostRequest.subName)
-            // 2nd, insert the new post with the requested sub name
-            this@DataSource.insertToLocalDatabase(loadPostRequest.subName, newPosts)
-            getPostBySubNameState.postValue(State.LOADED)
-        }
-
-        return getPostBySubNameState
-    }
-
-    private fun deletePostBySubNameInLocalDatabase(subName: String) {
-        this.database.redditPostDao().deleteRedditPostsBySub(subName = subName)
-    }
 
     private fun insertToLocalDatabase(subName: String, newPosts: List<Post>) {
         this.database.redditPostDao().addRedditPosts(newPosts.map { post ->

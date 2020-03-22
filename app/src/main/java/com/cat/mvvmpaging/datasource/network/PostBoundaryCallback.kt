@@ -16,11 +16,11 @@ class PostBoundaryCallback(
     val onZeroLoad: suspend (String, Int) -> List<Post>?,
     val onLoadMore: suspend (String, String, Int) -> List<Post>?
 ) : PagedList.BoundaryCallback<Post>() {
-    val loadMoreState: MutableLiveData<State> = MutableLiveData()
+    val networkState: MutableLiveData<State> = MutableLiveData()
 
     override fun onZeroItemsLoaded() {
         CoroutineScope(this.coroutineContext).launch {
-            this@PostBoundaryCallback.loadMoreState.postValue(State.LOADING)
+            this@PostBoundaryCallback.networkState.postValue(State.LOADING)
             val newPost: List<Post>? = this@PostBoundaryCallback.onZeroLoad(
                 subName,
                 networkPageSize
@@ -28,24 +28,24 @@ class PostBoundaryCallback(
 
             if (newPost == null) {
                 this@PostBoundaryCallback
-                    .loadMoreState
+                    .networkState
                     .postValue(State.error("Refreshing reddit posts by subname ${this@PostBoundaryCallback.subName} failed!"))
                 return@launch
             }
 
             if (newPost.isEmpty()) {
-                this@PostBoundaryCallback.loadMoreState.postValue(State.EMPTY)
+                this@PostBoundaryCallback.networkState.postValue(State.EMPTY)
                 return@launch
             }
 
             this@PostBoundaryCallback.handleResponse(subName, newPost)
-            this@PostBoundaryCallback.loadMoreState.postValue(State.LOADED)
+            this@PostBoundaryCallback.networkState.postValue(State.LOADED)
         }
     }
 
     override fun onItemAtEndLoaded(itemAtEnd: Post) {
         CoroutineScope(this.coroutineContext).launch {
-            this@PostBoundaryCallback.loadMoreState.postValue(State.LOADING)
+            this@PostBoundaryCallback.networkState.postValue(State.LOADING)
             val morePosts: List<Post>? = this@PostBoundaryCallback.onLoadMore(
                 subName,
                 itemAtEnd.name,
@@ -54,18 +54,18 @@ class PostBoundaryCallback(
 
             if (morePosts == null) {
                 this@PostBoundaryCallback
-                    .loadMoreState
+                    .networkState
                     .postValue(State.error("Loading more reddit posts by subname ${this@PostBoundaryCallback.subName} failed!"))
                 return@launch
             }
 
             if (morePosts.isEmpty()) {
-                this@PostBoundaryCallback.loadMoreState.postValue(State.EMPTY)
+                this@PostBoundaryCallback.networkState.postValue(State.EMPTY)
                 return@launch
             }
 
             this@PostBoundaryCallback.handleResponse(subName, morePosts)
-            this@PostBoundaryCallback.loadMoreState.postValue(State.LOADED)
+            this@PostBoundaryCallback.networkState.postValue(State.LOADED)
         }
     }
 }

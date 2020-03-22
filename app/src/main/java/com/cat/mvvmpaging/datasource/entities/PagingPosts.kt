@@ -6,8 +6,6 @@ import com.cat.domain.entity.State
 
 data class PagingPosts(
     val data : LiveData<PagedList<Post>>,
-    val refreshState : LiveData<State>,
-    val loadMoreState : LiveData<State>,
-    val refresh: () -> Unit
+    val networkState : LiveData<State>
 )
 

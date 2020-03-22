@@ -1,6 +1,7 @@
 package com.cat.mvvmpaging.ui.main
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,6 +15,7 @@ import com.cat.mvvmpaging.R
 import com.cat.mvvmpaging.ui.main.adapters.PostFeedAdapter
 import kotlinx.android.synthetic.main.main_fragment.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import timber.log.Timber
 
 class MainFragment : Fragment() {
 
@@ -33,10 +35,6 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         rl_post_list.adapter = PostFeedAdapter()
-
-        btn_go.setOnClickListener {
-            listViewModel.refresh(edt_sub_name.text.toString())
-        }
 
         val dividerItemDecoration = DividerItemDecoration(
             this.requireContext(),
@@ -58,15 +56,9 @@ class MainFragment : Fragment() {
             (rl_post_list.adapter as PostFeedAdapter).submitList(it)
         })
 
-        this.listViewModel.refreshState.observe(viewLifecycleOwner, Observer {
-            when (it) {
-                State.LOADING -> fl_loading.visibility = View.VISIBLE
-                else -> fl_loading.visibility = View.GONE
-            }
-        })
-
-        this.listViewModel.subNameTriggerLiveData.observe(viewLifecycleOwner, Observer { subName ->
-            edt_sub_name.setText(subName)
+        this.listViewModel.networkState.observe(viewLifecycleOwner, Observer {
+            // You can switch UI between loading/empty/error and finish state
+            Timber.d("Network state $it")
         })
 
         this.listViewModel.onLoad()

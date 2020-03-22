@@ -15,7 +15,7 @@ import org.koin.core.inject
 class MainViewModel : ViewModel(), KoinComponent {
     private val dataSource: DataSource by inject()
 
-    val subNameTriggerLiveData: MutableLiveData<String> = MutableLiveData()
+    private val subNameTriggerLiveData: MutableLiveData<String> = MutableLiveData()
     private val getPostLiveData: LiveData<PagingPosts> =
         Transformations.map(subNameTriggerLiveData) { subName ->
             this@MainViewModel.dataSource.loadPostBySubName(
@@ -28,27 +28,12 @@ class MainViewModel : ViewModel(), KoinComponent {
             it?.data
         }
 
-    val refreshState: LiveData<State> =
+    val networkState: LiveData<State> =
         Transformations.switchMap(getPostLiveData) {
-            it?.refreshState
-        }
-
-    val loadMoreState: LiveData<State> =
-        Transformations.switchMap(getPostLiveData) {
-            it?.loadMoreState
+            it?.networkState
         }
 
     fun onLoad() {
-        this.subNameTriggerLiveData.value = Utils.currentSubName()
-    }
-
-    fun refresh(subName: String) {
-        // Save requesting subname for next time opening of the app
-        Utils.setSubName(subName = subName)
-        if (subName == subNameTriggerLiveData.value) {
-            getPostLiveData.value?.refresh?.invoke()
-        } else {
-            subNameTriggerLiveData.value = subName
-        }
+        this.subNameTriggerLiveData.value = "gaming"
     }
 }
