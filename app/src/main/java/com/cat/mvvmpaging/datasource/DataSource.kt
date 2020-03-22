@@ -37,14 +37,16 @@ class DataSource : KoinComponent {
         }
 
         val postLiveData: LiveData<PagedList<Post>> = LivePagedListBuilder(
-            this.database.redditPostDao().getRedditPostsBySub(loadPostRequest.subName),
-            PagedList.Config
-                .Builder()
-                .setEnablePlaceholders(false)
-                .setInitialLoadSizeHint(PAGE_SIZE)
-                .setPageSize(PAGE_SIZE)
-                .setPrefetchDistance(15)
-                .build()
+            this.database
+                .redditPostDao()
+                .getRedditPostsBySub(loadPostRequest.subName),
+                PagedList.Config
+                    .Builder()
+                    .setEnablePlaceholders(false)
+                    .setInitialLoadSizeHint(PAGE_SIZE)
+                    .setPageSize(PAGE_SIZE)
+                    .setPrefetchDistance(15)
+                    .build()
         ).setBoundaryCallback(boundaryCallback).build()
 
         // Building Paging DataSource
